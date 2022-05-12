@@ -6,6 +6,7 @@ namespace App.Domain.Models.Orders.OrderStatuses
     {
         InProgress,
         Cancelled,
-        Shipped
+        Shipped,
+        Received
     }
 }

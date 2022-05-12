@@ -90,12 +90,12 @@ namespace App.Domain.Models.Auctions
 
             if (lastOffer is null) CompareNewOfferWithTheInitialPrice(newOffer);
 
-            CompareNewOfferWithLastOffer(newOffer, lastOffer!.Price);
+            CompareNewOfferWithLastOffer(newOffer, lastOffer?.Price);
         }
 
         private void CompareNewOfferWithMinOfferPrice(double newOffer)
         {
-            if (MinOfferPrice < newOffer) throw new NewOfferShouldBeHigherThanMinOfferPriceException();
+            if (MinOfferPrice > newOffer) throw new NewOfferShouldBeHigherThanMinOfferPriceException();
         }
 
         private void CompareNewOfferWithTheInitialPrice(double newOffer)
@@ -104,8 +104,10 @@ namespace App.Domain.Models.Auctions
                 throw new NewOfferShouldBeHigherThanTheInitialPriceException();
         }
 
-        private void CompareNewOfferWithLastOffer(double newOffer, double lastOffer)
+        private void CompareNewOfferWithLastOffer(double newOffer, double? lastOffer)
         {
+            if(lastOffer is null) return;
+
             if (newOffer <= lastOffer)
                 throw new NewOfferShouldBeHigherThanLastOfferException();
         }

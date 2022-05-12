@@ -9,6 +9,7 @@ using App.Domain.Models.Auctions.AuctionOffers;
 using App.Application.Services.AuctionParticipantServices;
 using AutoMapper;
 using App.Application.Contracts;
+using App.Domain.Exceptions.TechnicalExceptions;
 
 namespace App.Application.Services.AuctionOfferServices
 {
@@ -36,12 +37,12 @@ namespace App.Application.Services.AuctionOfferServices
             _mapper = mapper;
         }
 
-        //TODO: We Need to Push new Offers to Web App! 
+        //TODO: We Need to Push new Offers to Web App! (X)
         //TODO: How we will set The Winner? (X)
         //TODO: This Action Needs Refactor! (X)
         public async Task<GetAuctionOfferDto> GiveAnOffer(CreateAuctionOfferDto dto, CancellationToken cancellationToken)
         {
-            using var transaction = await _repo.BeginTransactionAsync(cancellationToken: cancellationToken);
+            // using var transaction = await _repo.BeginTransactionAsync(cancellationToken: cancellationToken);
 
             var userId = await _authService.GetCurrentUserId(cancellationToken);
 
@@ -50,10 +51,12 @@ namespace App.Application.Services.AuctionOfferServices
                                                                 .Include(auction => auction.AuctionOffers)
                                                                 .FirstOrDefaultAsync<Auction>(cancellationToken);
 
+            if (auction is null) throw new EntityNotFoundException("auction was not found");
+
             if (auction.IsFinished())
             {
                 auction.MarkAsSold();
-                await transaction!.CommitAsync(cancellationToken);
+                // await transaction!.CommitAsync(cancellationToken);
                 throw new AuctionHasAlreadyEndedException();
             }
 
@@ -67,7 +70,7 @@ namespace App.Application.Services.AuctionOfferServices
 
             var offer = await CreateOffer(dto.Price, auction.Id, userId, cancellationToken);
 
-            await transaction!.CommitAsync(cancellationToken);
+            // await transaction!.CommitAsync(cancellationToken);
 
             return _mapper.Map<AuctionOffer, GetAuctionOfferDto>(offer);
         }

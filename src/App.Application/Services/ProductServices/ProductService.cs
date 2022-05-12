@@ -327,11 +327,11 @@ var result = new PageResultDto(){
         {
             int requestedProductsCount = productIds.Count();
 
-            var data = await _repo.GetByRangeAsync<Product, uint>(productIds, cancellationToken);
+            // var data = await _repo.GetByRangeAsync<Product, uint>(productIds, cancellationToken);
 
-            int existedProductsCount = data.Count();
+            var data = await _repo.GetListAsync<Product>(product => productIds.Contains(product.Id));
 
-            if (existedProductsCount != requestedProductsCount) throw new NotAllRequestedProductsWasFoundException();
+            if (data.Count != requestedProductsCount) throw new NotAllRequestedProductsWasFoundException();
 
             return data;
         }

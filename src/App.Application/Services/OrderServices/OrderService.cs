@@ -9,6 +9,8 @@ using App.Application.Contracts;
 using Microsoft.EntityFrameworkCore;
 using App.Domain.Models.Orders.OrderStatuses;
 using App.Domain.Exceptions.LogicalExceptions.OrderExceptions;
+using AutoMapper;
+using App.Domain.Exceptions.TechnicalExceptions;
 
 namespace App.Application.Services.OrderServices
 {
@@ -19,21 +21,23 @@ namespace App.Application.Services.OrderServices
         private readonly IRepository _repo;
         private readonly IOrderProductService _orderProductService;
         private readonly IProductService _productService;
+        private readonly IMapper _mapper;
 
-        public OrderService(IDbService dbService, IAuthenticationService authService, IRepository repo, IOrderProductService orderProductService, IProductService productService)
+        public OrderService(IDbService dbService, IAuthenticationService authService, IRepository repo, IOrderProductService orderProductService, IProductService productService, IMapper mapper)
         {
             _dbService = dbService;
             _authService = authService;
             _repo = repo;
             _orderProductService = orderProductService;
             _productService = productService;
+            _mapper = mapper;
         }
 
         public async Task<Guid> CreateOrder(CreateOrderDto dto, CancellationToken cancellationToken)
         {
-            dto.CheckIfOrderHasAnyProduct();
+            dto.Validate();
 
-            using var transaction = await _repo.BeginTransactionAsync(cancellationToken: cancellationToken);
+            // using var transaction = await _repo.BeginTransactionAsync(cancellationToken: cancellationToken);
 
 
             var userId = await _authService.GetCurrentUserId(cancellationToken);
@@ -50,14 +54,24 @@ namespace App.Application.Services.OrderServices
             await _orderProductService.LinkProductsWithOrder(orderId, dto.Products, products, cancellationToken);
 
 
-            await transaction.CommitAsync(cancellationToken);
+            // await transaction.CommitAsync(cancellationToken);
 
             return orderId;
         }
 
-        public Task<GetUserOrderDto> GetOrder(Guid id, CancellationToken cancellationToken)
+        public async Task<GetUserOrderDto> GetOrder(Guid id, CancellationToken cancellationToken)
         {
-            return _dbService.GetByIdAsync<Order, GetUserOrderDto>(id, cancellationToken);
+            var order = await _repo.GetQueryable<Order>()
+                                    .Include(order => order.ApplicationUser)
+                                    .Include(order => order.OrderProducts)
+                                    .ThenInclude(orderProduct => orderProduct.Product)
+                                    .Where(order => order.Id == id)
+                                    .Where(order => !order.IsDeleted)
+                                    .FirstOrDefaultAsync(cancellationToken);
+
+            if (order is null) throw new EntityNotFoundException("order was not found");
+
+            return _mapper.Map<GetUserOrderDto>(order);
         }
 
         public Task DeleteOrder(Guid id, CancellationToken cancellationToken)
@@ -65,15 +79,21 @@ namespace App.Application.Services.OrderServices
             return _dbService.SoftDeleteAsync<Order>(id, cancellationToken);
         }
 
-        public async Task<IEnumerable<GetUserOrderDto>> GetUserOrders(GetPageDto dto, CancellationToken cancellationToken)
+        public async Task<IEnumerable<GetUserOrderDto>> GetUserOrders(CancellationToken cancellationToken)
         {
             var userId = await _authService.GetCurrentUserId(cancellationToken);
 
-            return await _dbService.GetAsPageAsync<Order, Guid, GetUserOrderDto, GetPageDto>(dto,
-            order => order.ApplicationUserId == userId,
-            cancellationToken);
+            var orders = await _repo.GetQueryable<Order>()
+                                    .Include(order => order.ApplicationUser)
+                                    .Include(order => order.OrderProducts)
+                                    .ThenInclude(orderProduct => orderProduct.Product)
+                                    .Where(order => order.ApplicationUserId == userId)
+                                    .Where(order => !order.IsDeleted)
+                                    .ToListAsync(cancellationToken);
+
+            return _mapper.Map<IEnumerable<GetUserOrderDto>>(orders);
         }
-        
+
         public async Task ChangeOrderStatus(ChangeOrderStatusDto request, CancellationToken cancellationToken)
         {
             var order = await _dbService.GetByIdAsync<Order>(request.OrderId, cancellationToken);
@@ -83,13 +103,24 @@ namespace App.Application.Services.OrderServices
             await _dbService.UpdateAsync<Order>(order, cancellationToken);
         }
 
+        //TODO: we should validate if request issuer is the same as order owner
+        public async Task MarkOrderAsReceived(Guid id, CancellationToken cancellationToken)
+        {
+            await ChangeOrderStatus(new ChangeOrderStatusDto()
+            {
+                OrderId = id,
+                OrderStatus = OrderStatus.Received
+            },
+            cancellationToken);
+        }
+
         public async Task RemoveProductFromOrder(RemoveProductFromOrderDto request, CancellationToken cancellationToken)
         {
             using var transaction = await _dbService.BeginTransactionAsync();
 
             var pivot = await _orderProductService.GetCorrspondOrderProductEntity(request.OrderId, request.ProductId, cancellationToken);
 
-            if(pivot.Order.OrderStatus == OrderStatus.Shipped) throw new CanNotDeleteShippedOrdersException();
+            if (pivot.Order.OrderStatus == OrderStatus.Shipped) throw new CanNotDeleteShippedOrdersException();
 
             pivot.Order.DecreaseOrderCost(pivot.Quantity, pivot.Product.Price);
 

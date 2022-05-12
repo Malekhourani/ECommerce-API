@@ -1,3 +1,4 @@
+using System.Linq;
 using App.Domain.Exceptions.LogicalExceptions.CategoryExceptions;
 using App.Domain.Exceptions.TechnicalExceptions;
 using App.Domain.Models.Products.Categories;
@@ -9,16 +10,24 @@ namespace App.Application.Extensions
     {
         public static async Task<IEnumerable<TEntity>> GetByRangeAsync<TEntity, TKey>(this IRepository repo, IEnumerable<TKey> keys, CancellationToken cancellationToken)
         {
-            var keyListAsString = keys.Cast<string>()
-                                        .Aggregate((a, b) => a + ", " + b);
+            // var keyListAsString = keys.Aggregate("", (a, b) =>
+            // {
+            //     if (string.IsNullOrEmpty(a)) return b?.ToString();
 
-            var query = "Select * " + 
+            //     return a.ToString() + ", " + b?.ToString();
+            // });
+
+            if(! keys.Any()) return new List<TEntity>();
+
+            var keyListAsString = string.Join(',', keys.ToList());
+
+            var query = "Select * " +
                         $"From {nameof(TEntity)}" +
                         $"Where Id in({keyListAsString})";
 
             var result = await repo.GetFromRawSqlAsync<TEntity>(query, cancellationToken);
 
-            if(result is null) throw new NoEntityWasFound($"No {nameof(TEntity)}s Was Found");
+            if (result is null) throw new NoEntityWasFound($"No {nameof(TEntity)}s Was Found");
 
             return result;
         }

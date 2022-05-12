@@ -11,9 +11,11 @@ namespace App.Application.Contracts
 
         Task DeleteOrder(Guid id, CancellationToken cancellationToken);
 
-        Task<IEnumerable<GetUserOrderDto>> GetUserOrders(GetPageDto dto, CancellationToken cancellationToken);
+        Task<IEnumerable<GetUserOrderDto>> GetUserOrders(CancellationToken cancellationToken);
 
         Task ChangeOrderStatus(ChangeOrderStatusDto dto, CancellationToken cancellationToken);
+
+        Task MarkOrderAsReceived(Guid id, CancellationToken cancellationToken);
 
         Task RemoveProductFromOrder(RemoveProductFromOrderDto request, CancellationToken cancellationToken);
 

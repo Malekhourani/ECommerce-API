@@ -48,7 +48,14 @@ public class MediaController : BaseController<IProductMediaService>
 
         var contentType = "application/octet-stream";
 
-        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        byte[] bytes = default;
+
+        try{
+         bytes = await System.IO.File.ReadAllBytesAsync(path);
+        }catch(System.IO.FileNotFoundException)
+        {
+            return NotFound();
+        }
         return File(bytes, contentType, fileName, true);
     }
 }

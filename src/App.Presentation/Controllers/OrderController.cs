@@ -37,11 +37,10 @@ namespace App.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<Response> GetUserOrders(GetPageDto dto, CancellationToken cancellationToken)
+        public async Task<Response> GetUserOrders(CancellationToken cancellationToken)
         {
-            return await Ok<GetPageDto, IEnumerable<GetUserOrderDto>>(
+            return await Ok<IEnumerable<GetUserOrderDto>>(
                 _service.GetUserOrders,
-                dto,
                 cancellationToken
             );
         }
@@ -92,6 +91,16 @@ namespace App.Presentation.Controllers
             return await NoContent<ChangeProductQuantityDto>(
                 _service.ChangeProductQuantity,
                 dto, 
+                cancellationToken
+            );
+        }
+
+        [HttpPut]
+        public async Task<Response> MarkOrderAsReceived(Guid id, CancellationToken cancellationToken)
+        {
+            return await NoContent<Guid>(
+                _service.MarkOrderAsReceived,
+                id, 
                 cancellationToken
             );
         }
