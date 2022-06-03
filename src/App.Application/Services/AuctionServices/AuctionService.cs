@@ -39,13 +39,13 @@ namespace App.Application.Services.AuctionServices
 
             var currentUserId = await _authService.GetCurrentUserId(cancellationToken);
 
-            var product = _productService.GetProduct(dto.ProductId, cancellationToken);
+            var product = await _productService.GetProduct(dto.ProductId, cancellationToken);
 
             var auction = Auction.Factory(dto.StartDate, dto.EndDate, dto.InitialPrice, dto.MinOfferPrice, dto.ProductId, currentUserId);
 
             var auctionId = (await _dbService.CreateAsync(auction, cancellationToken))[0].CastTo<Guid>();
 
-            await _participantService.JoinAuction(auctionId, cancellationToken);
+            // await _participantService.JoinAuction(auctionId, cancellationToken);
 
             // await transaction.CommitAsync(cancellationToken);
 
@@ -54,7 +54,8 @@ namespace App.Application.Services.AuctionServices
 
         public Task DeleteAuction(Guid id, CancellationToken cancellationToken)
         {
-            return _dbService.SoftDeleteAsync<Auction>(id, cancellationToken);
+            // return _dbService.SoftDeleteAsync<Auction>(id, cancellationToken);
+            return _dbService.DeleteAsync<Auction>(id, cancellationToken);
         }
 
         public async Task<GetAuctionInfoDto> GetAuctionInfo(Guid id, CancellationToken cancellationToken)
@@ -70,7 +71,9 @@ namespace App.Application.Services.AuctionServices
             return _mapper.Map<Auction, GetAuctionInfoDto>(auction);
         }
 
-        public async Task<IEnumerable<GetActiveAuctionDto>> GetActiveAuctions(GetPageDto dto, CancellationToken cancellationToken)
+        // public async Task<IEnumerable<GetActiveAuctionDto>> GetActiveAuctions(GetPageDto dto, CancellationToken cancellationToken)
+        public async Task<IEnumerable<GetActiveAuctionDto>> GetActiveAuctions(CancellationToken cancellationToken)
+
         {
             var data = await _repo.GetQueryable<Auction>()
                                         .Include(auction => auction.Creator)
@@ -96,14 +99,13 @@ namespace App.Application.Services.AuctionServices
                                                 Price = row.Product.Price
                                             }
                                         })
-                                        .Skip((dto.PageId - 1) * dto.PageSize)
-                                        .Take(dto.PageSize)
                                         .ToListAsync(cancellationToken);
 
             return data;
         }
 
-        public async Task<IEnumerable<GetActiveAuctionDto>> GetUserAuctions(GetPageDto dto, CancellationToken cancellationToken)
+        // public async Task<IEnumerable<GetActiveAuctionDto>> GetUserAuctions(GetPageDto dto, CancellationToken cancellationToken)
+        public async Task<IEnumerable<GetActiveAuctionDto>> GetUserAuctions(CancellationToken cancellationToken)
         {
             var userId = await _authService.GetCurrentUserId(cancellationToken);
 
@@ -130,8 +132,8 @@ namespace App.Application.Services.AuctionServices
                                                 Price = row.Auction.Product.Price
                                             }
                                         })
-                                        .Skip((dto.PageId - 1) * dto.PageSize)
-                                        .Take(dto.PageSize)
+                                        // .Skip((dto.PageId - 1) * dto.PageSize)
+                                        // .Take(dto.PageSize)
                                         .ToListAsync(cancellationToken);
 
             return auctionEntities;

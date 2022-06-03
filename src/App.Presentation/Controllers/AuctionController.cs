@@ -1,6 +1,7 @@
 using App.Application.Contracts;
 using App.Application.DTOs.Auction;
 using App.Application.DTOs.Common;
+using App.Domain.Models.Users;
 using App.Presentation.Controllers.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,8 @@ public class AuctionController : BaseController<IAuctionService>
     {
     }
 
-    [HttpPost]
-    [Authorize(Policy = "ShopOwnerOrCustomer")]
+    [Authorize(Policy = Roles.SHOP_OWNER_ROLE)]
+    [HttpPost]   
     public async Task<Response> CreateAuction(CreateAuctionDto dto, CancellationToken cancellationToken)
     {
         return await Ok(
@@ -25,7 +26,7 @@ public class AuctionController : BaseController<IAuctionService>
     }
 
     [HttpDelete]
-    [Authorize]
+    [Authorize(Policy = Roles.SHOP_OWNER_OR_ADMIN)]
     public async Task<Response> DeleteAuction(Guid id, CancellationToken cancellationToken)
     {
         return await NoContent<Guid>(
@@ -46,24 +47,22 @@ public class AuctionController : BaseController<IAuctionService>
             );
     }
 
-    [HttpPost]
+    [HttpGet]
     [AllowAnonymous]
-    public async Task<Response> GetActiveAuctions(GetPageDto dto, CancellationToken cancellationToken)
+    public async Task<Response> GetActiveAuctions(CancellationToken cancellationToken)
     {
         return await Ok(
             _service.GetActiveAuctions,
-            dto,
             cancellationToken
             );
     }
 
-    [HttpPost]
+    [HttpGet]
     [Authorize]
-    public async Task<Response> GetUserAuctions(GetPageDto dto, CancellationToken cancellationToken)
+    public async Task<Response> GetUserAuctions(CancellationToken cancellationToken)
     {
         return await Ok(
             _service.GetUserAuctions,
-            dto,
             cancellationToken
             );
     }

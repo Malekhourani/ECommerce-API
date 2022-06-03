@@ -46,7 +46,7 @@ namespace App.Application.DTOs.Product
 
         private void ValidateNewProductPrice()
         {
-            if(Price < 0) throw new ProductPriceCanNotBeLessThanZeroException();
+            if(Price <= 0) throw new ProductPriceCanNotBeLessThanZeroException();
         }
     }
 }

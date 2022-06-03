@@ -85,7 +85,7 @@ namespace App.Infrastructure.Extensions
                     builder.RequireClaim("Role", Roles.CUSTOMER_ROLE);
                 });
 
-                options.AddPolicy("ShopOwnerOrAdmin", builder =>
+                options.AddPolicy(Roles.SHOP_OWNER_OR_ADMIN, builder =>
                 {
                     builder.RequireAssertion(context =>
                         context.User.HasClaim(c =>

@@ -29,4 +29,13 @@ public class AuctionOfferController : BaseController<IAuctionOfferService>
 
         return CustomeResponse.Ok(result);
     }
+
+    [HttpGet("{lastReceivedId:Guid}/auction/{auctionId:Guid}")]
+    [Authorize]
+    public async Task<CustomeResponse> GetNewOffers([FromRoute] Guid lastReceivedId, [FromRoute] Guid auctionId, [FromQuery] DateTime lastReceivedDate, CancellationToken cancellationToken)
+    {
+        var result = await _service.GetNewOffers(auctionId, lastReceivedId, lastReceivedDate, cancellationToken);
+
+        return CustomeResponse.Ok(result);
+    }
 }

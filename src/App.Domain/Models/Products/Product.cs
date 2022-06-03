@@ -5,6 +5,7 @@ using App.Domain.Models.Discounts;
 using App.Domain.Exceptions.LogicalExceptions.ProductExceptions;
 using App.Domain.Models.Users;
 using MediaModel = App.Domain.Models.Products.Media.Media;
+using App.Domain.Models.Auctions;
 
 namespace App.Domain.Models.Products
 {
@@ -39,6 +40,8 @@ namespace App.Domain.Models.Products
 
         [ForeignKey("ShopOwnerId")]
         public ApplicationUser ShopOwner { get; set; }
+
+        public ICollection<Auction> Auctions {get; set;}
 
         public ICollection<Discount> Discounts { get; set; }
 

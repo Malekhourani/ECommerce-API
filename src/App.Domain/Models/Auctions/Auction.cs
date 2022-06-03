@@ -88,7 +88,7 @@ namespace App.Domain.Models.Auctions
 
             var lastOffer = AuctionOffers.LastOrDefault();
 
-            if (lastOffer is null) CompareNewOfferWithTheInitialPrice(newOffer);
+            // if (lastOffer is null) CompareNewOfferWithTheInitialPrice(newOffer);
 
             CompareNewOfferWithLastOffer(newOffer, lastOffer?.Price);
         }

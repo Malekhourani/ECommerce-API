@@ -11,6 +11,7 @@ using App.Domain.Models.Orders.OrderStatuses;
 using App.Domain.Exceptions.LogicalExceptions.OrderExceptions;
 using AutoMapper;
 using App.Domain.Exceptions.TechnicalExceptions;
+using App.Domain.Exceptions.LogicalExceptions.CommonExceptions;
 
 namespace App.Application.Services.OrderServices
 {
@@ -103,15 +104,15 @@ namespace App.Application.Services.OrderServices
             await _dbService.UpdateAsync<Order>(order, cancellationToken);
         }
 
-        //TODO: we should validate if request issuer is the same as order owner
         public async Task MarkOrderAsReceived(Guid id, CancellationToken cancellationToken)
         {
-            await ChangeOrderStatus(new ChangeOrderStatusDto()
-            {
-                OrderId = id,
-                OrderStatus = OrderStatus.Received
-            },
-            cancellationToken);
+            var order = await _dbService.GetByIdAsync<Order>(id, cancellationToken);
+
+            if( order.ApplicationUserId != (await _authService.GetCurrentUserId(cancellationToken)) ) throw new AuthorizationException("only order owner can mark order as received");
+
+            order.ChangeOrderStatus(OrderStatus.Received);
+
+            await _dbService.UpdateAsync<Order>(order, cancellationToken);
         }
 
         public async Task RemoveProductFromOrder(RemoveProductFromOrderDto request, CancellationToken cancellationToken)
@@ -120,7 +121,7 @@ namespace App.Application.Services.OrderServices
 
             var pivot = await _orderProductService.GetCorrspondOrderProductEntity(request.OrderId, request.ProductId, cancellationToken);
 
-            if (pivot.Order.OrderStatus == OrderStatus.Shipped) throw new CanNotDeleteShippedOrdersException();
+            if (pivot.Order.OrderStatus == OrderStatus.Received) throw new CanNotDeleteShippedOrdersException();
 
             pivot.Order.DecreaseOrderCost(pivot.Quantity, pivot.Product.Price);
 
@@ -128,6 +129,7 @@ namespace App.Application.Services.OrderServices
 
             await transaction.CommitAsync(cancellationToken);
         }
+
 
         public async Task AddNewProductToOrder(AddNewProductToOrderDto request, CancellationToken cancellationToken)
         {
@@ -142,6 +144,8 @@ namespace App.Application.Services.OrderServices
 
 
             var order = await _dbService.GetByIdAsync<Order>(request.OrderId, cancellationToken);
+
+            if(order.OrderStatus == OrderStatus.Received) throw new BadRequestException("order already received");
 
             order.IncreaseOrderCost(newQuantity: request.NewProduct.Quantity, price: product.Price);
 

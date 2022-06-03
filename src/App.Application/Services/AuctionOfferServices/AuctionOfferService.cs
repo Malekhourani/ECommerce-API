@@ -85,5 +85,15 @@ namespace App.Application.Services.AuctionOfferServices
 
             return newOffer;
         }
+
+        public async Task<IEnumerable<GetAuctionOfferDto>> GetNewOffers(Guid auctionId, Guid lastReceivedOfferId, DateTime lastReceivedOfferDate, CancellationToken cancellationToken)
+        {
+            var data = _repo.GetQueryable<AuctionOffer>()
+                            .Where(offer => offer.AuctionId == auctionId)
+                            .Where(offer => offer.Date > lastReceivedOfferDate)
+                            .Where(offer => offer.Id != lastReceivedOfferId);
+
+            return await _mapper.ProjectTo<GetAuctionOfferDto>(data).ToListAsync(cancellationToken);
+        }
     }
 }

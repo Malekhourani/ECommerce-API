@@ -210,6 +210,7 @@ var result = new PageResultDto(){
 
             var products = await _repo.GetQueryable<Product>()
                             .Include(product => product.Category)
+                            .Include(product => product.Auctions)
                             .Include(product => product.ShopOwner)
                             .Where(product => product.ShopOwnerId == currentShopOwnerId)
                             .Where(product => product.Name.Contains(dto.FilteringValue) ||
@@ -219,19 +220,19 @@ var result = new PageResultDto(){
                             .OrderByDescending(product => product.Id)
                             // .Skip((dto.PageId - 1) * dto.PageSize)
                             // .Take(dto.PageSize)
-                            .Select(product => new GetProductDto()
+                            .Select(product => new 
                             {
                                 Id = product.Id,
                                 Quantity = product.Quantity,
                                 Name = product.Name,
                                 Price = product.Price,
                                 Description = product.Description,
-                                Category = new()
+                                Category = new
                                 {
                                     Id = product.CategoryId,
                                     Name = product.Category.Name
                                 },
-                                Company = new()
+                                Company = new
                                 {
                                     CompanyId = product.ShopOwnerId,
                                     CompanyName = product.ShopOwner.NormalizedUserName
@@ -242,7 +243,14 @@ var result = new PageResultDto(){
                                             {
                                                 Id = media.Id,
                                                 Endpoint = $"dotnet/Ecommerce/api/media/DownloadMedia/{media.Id}"
-                                            }))
+                                            })),
+                                Auctions = product.Auctions.Select(auction => new 
+                                {
+                                    Id = auction.Id,
+                                    StartDate = auction.StartDate,
+                                    EndDate = auction.EndDate,
+                                    IsClosed = auction.IsClosed,
+                                })
                             })
                             .ToListAsync(cancellationToken);
 

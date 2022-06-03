@@ -8,5 +8,7 @@ namespace App.Domain.Models.Users
         public const string CUSTOMER_ROLE = "CUSTOMER";
         public const string SHOP_OWNER_ROLE = "SHOP_OWNER";
         public const string DRIVER_ROLE = "DRIVER_ROLE";
+
+        public const string SHOP_OWNER_OR_ADMIN = "ShopOwnerOrAdmin";
     }
 }

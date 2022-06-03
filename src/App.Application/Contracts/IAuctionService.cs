@@ -11,7 +11,7 @@ public interface IAuctionService
 
     Task<GetAuctionInfoDto> GetAuctionInfo(Guid id, CancellationToken cancellationToken);
 
-    Task<IEnumerable<GetActiveAuctionDto>> GetActiveAuctions(GetPageDto dto, CancellationToken cancellationToken);
+    Task<IEnumerable<GetActiveAuctionDto>> GetActiveAuctions(CancellationToken cancellationToken);
 
-    Task<IEnumerable<GetActiveAuctionDto>> GetUserAuctions(GetPageDto dto, CancellationToken cancellationToken);
+    Task<IEnumerable<GetActiveAuctionDto>> GetUserAuctions(CancellationToken cancellationToken);
 }
